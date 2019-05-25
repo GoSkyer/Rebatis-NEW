@@ -1,6 +1,7 @@
 package org.goskyer.rebatis.convert;
 
 import com.github.jasync.sql.db.RowData;
+import org.goskyer.rebatis.ExecuteResult;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -13,9 +14,9 @@ import java.util.function.Function;
 
 public class Convert {
 
-    private CompletableFuture completableFuture;
+    private ExecuteResult completableFuture;
 
-    public Convert(CompletableFuture completableFuture) {
+    public Convert(ExecuteResult completableFuture) {
         this.completableFuture = completableFuture;
     }
 
@@ -26,9 +27,28 @@ public class Convert {
             @Override
             public U apply(List<RowMap<String, Object>> rowMaps) {
 
-                if (rowMaps.size() == 0) return null;
+                if (rowMaps.size() == 0) {
+                    return null;
+                }
 
                 return Convert.this.convertTo(rowMaps, clazz);
+            }
+
+        });
+    }
+
+    public <U> CompletableFuture<List<U>> convertToList(Class<U> clazz) {
+
+        return completableFuture.thenApply(new Function<List<RowMap<String, Object>>, List<U>>() {
+
+            @Override
+            public List<U> apply(List<RowMap<String, Object>> rowMaps) {
+
+                if (rowMaps.size() == 0) {
+                    return null;
+                }
+
+                return Convert.this.convertToList(rowMaps, clazz);
             }
 
         });
@@ -55,9 +75,10 @@ public class Convert {
 
             U obj = clazz.newInstance();
 
-            Field[] fields = clazz.getFields();
+            Field[] fields = clazz.getDeclaredFields();
 
             for (Field field : fields) {
+                field.setAccessible(true);
                 field.set(obj, rowMap.get(field.getName()));
             }
 
@@ -68,13 +89,11 @@ public class Convert {
         }
     }
 
-    public <U> List<U> convertToList(List<RowMap<String, Object>> rowMaps, Class<U> clazz) {
-
-        Type dataType = ((ParameterizedType) (Type) clazz).getActualTypeArguments()[0];
+    private <U> List<U> convertToList(List<RowMap<String, Object>> rowMaps, Class<U> clazz) {
 
         List<U> list = new ArrayList<>();
         for (RowMap<String, Object> rowMap : rowMaps) {
-            list.add(convertToObject(rowMap, (Class<U>) dataType));
+            list.add(convertToObject(rowMap, clazz));
         }
 
         return list;

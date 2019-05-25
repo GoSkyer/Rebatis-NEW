@@ -1,6 +1,7 @@
 package org.goskyer.rebatis.reactive;
 
 import com.github.jasync.sql.db.QueryResult;
+import org.goskyer.rebatis.ExecuteResult;
 import org.goskyer.rebatis.annotation.Param;
 
 import org.goskyer.rebatis.annotation.Delete;
@@ -15,7 +16,6 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.*;
 
 import org.goskyer.rebatis.connection.AsyncConnection;
 import org.goskyer.rebatis.connection.Config;
@@ -42,7 +42,7 @@ public class TaskProxy implements InvocationHandler {
         cfg.setPort(3306);
         cfg.setDatabase("test");
         cfg.setUsername("root");
-        cfg.setPassword("Aa761349852.");
+        cfg.setPassword("root");
 
         this.mConnection = new AsyncConnection(cfg);
 
@@ -79,9 +79,9 @@ public class TaskProxy implements InvocationHandler {
                 .orElseThrow(() -> new NoSuchElementException("there is not matched annotation."));
     }
 
-    private CompletableFuture<List<RowMap>> taskHandler(TaskType taskType, Method method, Object[] args) {
+    private ExecuteResult taskHandler(TaskType taskType, Method method, Object[] args) {
 
-        CompletableFuture<QueryResult> future = null;
+        CompletableFuture<QueryResult> future;
 
         switch (taskType) {
             case Insert:
@@ -96,20 +96,19 @@ public class TaskProxy implements InvocationHandler {
             case Select:
                 future = selectHandler(method, args);
                 break;
+            default:
+                return null;
         }
 
-        return future.thenApply(new Function<QueryResult, List<RowMap>>() {
-            @Override
-            public List<RowMap> apply(QueryResult queryResult) {
-                return ResultConvert.convert(queryResult);
-            }
-        });
+        return new ExecuteResult(future.thenApply(ResultConvert::convert));
 
     }
 
     private String parseSQL(String sqlBeforeParse, Method method, Object[] args) {
 
-        if (args == null || args.length == 0) return sqlBeforeParse;
+        if (args == null || args.length == 0) {
+            return sqlBeforeParse;
+        }
 
         Parameter[] parameters = method.getParameters();
 

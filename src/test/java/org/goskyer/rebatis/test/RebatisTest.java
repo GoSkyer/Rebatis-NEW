@@ -16,10 +16,10 @@ public class RebatisTest {
 
         UserMapper mapper = Rebatis.register(UserMapper.class);
 
-//        User user1 = Rebatis.execute(mapper.selectUser("Tom", 18, 0), User.class).get();
-//        System.out.println(user1);
+        User user1 = Rebatis.execute(mapper.selectUser("Mina", 17, 2), User.class).get();
+        System.out.println(user1);
 
-        User user2 = Rebatis.execute(mapper.selectUser("Tom", 18, 0)).convert(User.class).get();
+        List<User> user2 = Rebatis.execute(mapper.selectUser("Tom", 18, 2)).convertToList(User.class).get();
         System.out.println(user2);
 
     }

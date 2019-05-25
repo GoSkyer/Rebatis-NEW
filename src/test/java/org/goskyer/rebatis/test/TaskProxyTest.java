@@ -1,6 +1,7 @@
 package org.goskyer.rebatis.test;
 
 
+import org.goskyer.rebatis.ExecuteResult;
 import org.goskyer.rebatis.test.dao.UserMapper;
 import org.goskyer.rebatis.convert.RowMap;
 import org.goskyer.rebatis.reactive.TaskProxy;
@@ -17,16 +18,14 @@ public class TaskProxyTest {
 
         UserMapper mapper = TaskProxy.getInstance().register(UserMapper.class);
 
-        CompletableFuture<List<RowMap>> future = mapper.selectUser("Tom", 18, 1);
+        ExecuteResult future = mapper.selectUser("Tom", 18, 1);
 
-        future.whenComplete(new BiConsumer<List<RowMap>, Throwable>() {
-
+        future.FUTURE.whenComplete(new BiConsumer<List<RowMap<String, Object>>, Throwable>() {
             @Override
-            public void accept(List<RowMap> listMap, Throwable throwable) {
-                System.out.println(listMap);
+            public void accept(List<RowMap<String, Object>> rowMaps, Throwable throwable) {
+                System.out.println(rowMaps);
                 System.out.println(throwable.toString());
             }
-
         });
 
         while (true) {

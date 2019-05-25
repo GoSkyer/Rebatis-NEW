@@ -11,15 +11,15 @@ import java.util.Map;
 
 public class ResultConvert {
 
-    public static List<RowMap> convert(QueryResult result) {
+    public static List<RowMap<String,Object>> convert(QueryResult result) {
         return convertToListMap((int) result.getRowsAffected(), result.getRows());
     }
 
-    public static List<RowMap> convertToListMap(int rows, ResultSet result) {
+    public static List<RowMap<String,Object>> convertToListMap(int rows, ResultSet result) {
 
         List<String> columnNames = result.columnNames();
 
-        List<RowMap> listMap = new ArrayList<>(rows);
+        List<RowMap<String,Object>> listMap = new ArrayList<>(rows);
 
         for (RowData row : result) {
             RowMap<String, Object> map = new RowMap<String, Object>(columnNames.size());
