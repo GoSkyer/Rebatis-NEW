@@ -1,8 +1,28 @@
 package org.goskyer.rebatis.reactive;
 
+/**
+ * @author Galaxy
+ * @description TODO
+ * @since 2019-05-26 10:10
+ */
 public enum TaskType {
 
-    Insert("Insert"), Delete("Delete"), Update("Update"), Select("Select");
+    /**
+     * Insert
+     */
+    Insert("Insert"),
+    /**
+     * Delete
+     */
+    Delete("Delete"),
+    /**
+     * Update
+     */
+    Update("Update"),
+    /**
+     * Select
+     */
+    Select("Select");
 
     private String type;
 

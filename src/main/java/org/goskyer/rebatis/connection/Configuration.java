@@ -1,6 +1,6 @@
 package org.goskyer.rebatis.connection;
 
-public class Config {
+public class Configuration {
 
     private String username;
     private String password;

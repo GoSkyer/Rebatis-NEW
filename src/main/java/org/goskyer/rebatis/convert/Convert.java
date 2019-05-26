@@ -1,12 +1,13 @@
 package org.goskyer.rebatis.convert;
 
-import com.github.jasync.sql.db.RowData;
-import org.goskyer.rebatis.ExecuteResult;
+import org.goskyer.rebatis.ExecuteReturn;
+import org.goskyer.rebatis.Result;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -14,41 +15,69 @@ import java.util.function.Function;
 
 public class Convert {
 
-    private ExecuteResult completableFuture;
+    private ExecuteReturn executeResult;
 
-    public Convert(ExecuteResult completableFuture) {
-        this.completableFuture = completableFuture;
+    public Convert(ExecuteReturn completableFuture) {
+        this.executeResult = completableFuture;
     }
 
-    public <U> CompletableFuture<U> convert(Class<U> clazz) {
-
-        return completableFuture.thenApply(new Function<List<RowMap<String, Object>>, U>() {
+    public CompletableFuture<Integer> status() {
+        return executeResult.thenApply(new Function<Result, Integer>() {
 
             @Override
-            public U apply(List<RowMap<String, Object>> rowMaps) {
+            public Integer apply(Result result) {
 
-                if (rowMaps.size() == 0) {
-                    return null;
+                if (!result.isSucceeded()) {
+                    return -1;
                 }
 
-                return Convert.this.convertTo(rowMaps, clazz);
+                return result.getEffectedRows();
             }
 
         });
     }
 
-    public <U> CompletableFuture<List<U>> convertToList(Class<U> clazz) {
+    public <U> CompletableFuture<U> single(Class<U> clazz) {
 
-        return completableFuture.thenApply(new Function<List<RowMap<String, Object>>, List<U>>() {
+        return executeResult.thenApply(new Function<Result, U>() {
 
             @Override
-            public List<U> apply(List<RowMap<String, Object>> rowMaps) {
+            public U apply(Result result) {
 
-                if (rowMaps.size() == 0) {
+                if (result.isNon()) {
                     return null;
                 }
 
-                return Convert.this.convertToList(rowMaps, clazz);
+                if (result.getRaws().size() == 0) {
+                    return null;
+                }
+
+                return Convert.this.convertTo(result.getRaws(), clazz);
+            }
+
+        });
+    }
+
+    public <U> CompletableFuture<List<U>> convert(Class<U> clazz) {
+
+        return executeResult.thenApply(new Function<Result, List<U>>() {
+
+            @Override
+            public List<U> apply(Result result) {
+
+                if (result.isNon()) {
+                    List list = new LinkedList();
+                    for (int i = 0; i < result.getEffectedRows(); i++) {
+                        list.add(null);
+                    }
+                    return list;
+                }
+
+                if (result.getRaws().size() == 0) {
+                    return null;
+                }
+
+                return Convert.this.convertToList(result.getRaws(), clazz);
             }
 
         });

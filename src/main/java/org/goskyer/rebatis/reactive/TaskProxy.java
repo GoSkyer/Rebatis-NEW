@@ -1,60 +1,31 @@
 package org.goskyer.rebatis.reactive;
 
 import com.github.jasync.sql.db.QueryResult;
-import org.goskyer.rebatis.ExecuteResult;
-import org.goskyer.rebatis.annotation.Param;
+import org.goskyer.rebatis.ExecuteReturn;
+import org.goskyer.rebatis.annotation.*;
 
-import org.goskyer.rebatis.annotation.Delete;
-import org.goskyer.rebatis.annotation.Insert;
-import org.goskyer.rebatis.annotation.Select;
-import org.goskyer.rebatis.annotation.Update;
-
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import org.goskyer.rebatis.connection.AsyncConnection;
-import org.goskyer.rebatis.connection.Config;
+import org.goskyer.rebatis.connection.Configuration;
 import org.goskyer.rebatis.connection.Connection;
 import org.goskyer.rebatis.convert.ResultConvert;
-import org.goskyer.rebatis.convert.RowMap;
 
+/**
+ * @author Galaxy
+ * @description TODO
+ * @since 2019-05-26 10:10
+ */
 public class TaskProxy implements InvocationHandler {
-
-    private final static TaskProxy PROXY = new TaskProxy();
-
-    public static TaskProxy getInstance() {
-        return PROXY;
-    }
-
-    private final Map<Class, TaskType> mAnnotationMap = new HashMap<>();
 
     private final Connection mConnection;
 
-    private TaskProxy() {
-
-        Config cfg = new Config();
-        cfg.setHost("localhost");
-        cfg.setPort(3306);
-        cfg.setDatabase("test");
-        cfg.setUsername("root");
-        cfg.setPassword("root");
-
+    public TaskProxy(Configuration cfg) {
         this.mConnection = new AsyncConnection(cfg);
-
-        this.init();
-
-    }
-
-    private void init() {
-        mAnnotationMap.put(Insert.class, TaskType.Insert);
-        mAnnotationMap.put(Delete.class, TaskType.Delete);
-        mAnnotationMap.put(Update.class, TaskType.Update);
-        mAnnotationMap.put(Select.class, TaskType.Select);
     }
 
     public <T> T register(Class<T> clazz) {
@@ -64,22 +35,12 @@ public class TaskProxy implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-        Annotation[] annotations = method.getAnnotations();
-
-        TaskType taskType = this.parseTaskType(annotations);
+        TaskType taskType = AnnotationParser.parseTaskType(method.getAnnotations());
 
         return this.taskHandler(taskType, method, args);
     }
 
-    private TaskType parseTaskType(Annotation[] annotations) throws Throwable {
-        return Arrays.stream(annotations)
-                .filter(annotation -> mAnnotationMap.containsKey(annotation.annotationType()))
-                .findFirst()
-                .map(annotation -> mAnnotationMap.get(annotation.annotationType()))
-                .orElseThrow(() -> new NoSuchElementException("there is not matched annotation."));
-    }
-
-    private ExecuteResult taskHandler(TaskType taskType, Method method, Object[] args) {
+    private ExecuteReturn taskHandler(TaskType taskType, Method method, Object[] args) {
 
         CompletableFuture<QueryResult> future;
 
@@ -100,35 +61,7 @@ public class TaskProxy implements InvocationHandler {
                 return null;
         }
 
-        return new ExecuteResult(future.thenApply(ResultConvert::convert));
-
-    }
-
-    private String parseSQL(String sqlBeforeParse, Method method, Object[] args) {
-
-        if (args == null || args.length == 0) {
-            return sqlBeforeParse;
-        }
-
-        Parameter[] parameters = method.getParameters();
-
-        String sqlAfterParse = sqlBeforeParse;
-
-        for (int i = 0; i < args.length; i++) {
-            Object value = args[i];
-            Parameter parameter = parameters[i];
-            Param paramAnnotation = parameter.getAnnotation(Param.class);
-            String paramHolder = paramAnnotation.value();
-
-            if (value instanceof String || value instanceof Character) {
-                sqlAfterParse = sqlAfterParse.replace("#{" + paramHolder + "}", "'" + value.toString() + "'");
-            } else {
-                sqlAfterParse = sqlAfterParse.replace("#{" + paramHolder + "}", value.toString());
-            }
-
-        }
-
-        return sqlAfterParse;
+        return new ExecuteReturn(future.thenApply(ResultConvert::convert));
 
     }
 
@@ -168,8 +101,19 @@ public class TaskProxy implements InvocationHandler {
         return this.executeSQLHandler(sqlBeforeParse, method, args);
     }
 
+    /**
+     * 解析sql中的参数，使用方法传入的值进行替换，并交由连接池发到数据库执行。
+     *
+     * @param sqlBeforeParse 未解析参数的sql
+     * @param method         需要执行的方法，获取参数名
+     * @param args           方法的参数值
+     * @return 数据库执行结果
+     */
     private CompletableFuture<QueryResult> executeSQLHandler(String sqlBeforeParse, Method method, Object[] args) {
-        String executeSQL = this.parseSQL(sqlBeforeParse, method, args);
+        String executeSQL = AnnotationParser.parseSQL(sqlBeforeParse, method, args);
+
+        System.out.println("Execute SQL -> " + executeSQL);
+
         return this.mConnection.execute(executeSQL);
     }
 

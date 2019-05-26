@@ -2,7 +2,7 @@ package org.goskyer.rebatis.test;
 
 import com.github.jasync.sql.db.QueryResult;
 import org.goskyer.rebatis.connection.AsyncConnection;
-import org.goskyer.rebatis.connection.Config;
+import org.goskyer.rebatis.connection.Configuration;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -13,7 +13,7 @@ public class ConnectionTest {
     @Test
     public void testMain() {
 
-        Config cfg = new Config();
+        Configuration cfg = new Configuration();
         cfg.setHost("localhost");
         cfg.setPort(3306);
         cfg.setDatabase("test");

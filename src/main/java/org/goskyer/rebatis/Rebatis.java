@@ -1,25 +1,34 @@
 package org.goskyer.rebatis;
 
+import org.goskyer.rebatis.connection.Configuration;
 import org.goskyer.rebatis.convert.Convert;
-import org.goskyer.rebatis.convert.RowMap;
 import org.goskyer.rebatis.reactive.TaskProxy;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * @author Galaxy
+ * @description TODO
+ * @since 2019-05-26 10:10
+ */
 public class Rebatis {
 
-    private final static TaskProxy PROXY = TaskProxy.getInstance();
+    private final TaskProxy mProxy;
 
-    public static <T> T register(Class<T> clazz) {
-        return PROXY.register(clazz);
+    public Rebatis(Configuration cfg) {
+        mProxy = new TaskProxy(cfg);
     }
 
-    public static <T> CompletableFuture<T> execute(ExecuteResult task, Class<T> clazz) {
+    public <T> T register(Class<T> clazz) {
+        return mProxy.register(clazz);
+    }
+
+    public <T> CompletableFuture<List<T>> execute(ExecuteReturn task, Class<T> clazz) {
         return new Convert(task).convert(clazz);
     }
 
-    public static Convert execute(ExecuteResult task) {
+    public Convert execute(ExecuteReturn task) {
         return new Convert(task);
     }
 
