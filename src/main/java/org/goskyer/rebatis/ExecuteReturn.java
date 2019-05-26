@@ -7,6 +7,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 
+/**
+ * @author Galaxy
+ */
 public class ExecuteReturn<T> {
 
     public CompletableFuture<List<RowMap<String, Object>>> FUTURE;

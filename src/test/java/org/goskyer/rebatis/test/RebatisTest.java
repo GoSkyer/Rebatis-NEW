@@ -2,6 +2,7 @@ package org.goskyer.rebatis.test;
 
 import org.goskyer.rebatis.Rebatis;
 import org.goskyer.rebatis.connection.Configuration;
+import org.goskyer.rebatis.convert.RowMap;
 import org.goskyer.rebatis.test.entity.User;
 import org.goskyer.rebatis.test.dao.UserMapper;
 import org.junit.Before;
@@ -10,6 +11,8 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class RebatisTest {
 
@@ -41,13 +44,15 @@ public class RebatisTest {
         int status3 = rebatis.execute(mapper.deleteUser("Jack", 17, 1)).status().get();
         System.out.println(status3);
 
-        int status4 = rebatis.execute(mapper.selectUser("Jack", 17, 1)).status().get();
+        Rebatis rebatis2 = new Rebatis(cfg);
+
+        int status4 = rebatis2.execute(mapper.selectUser("Jack", 17, 1)).status().get();
         System.out.println(status4);
 
-        User user2 = rebatis.execute(mapper.selectUser("Tom", 18, 1)).single(User.class).get();
+        User user2 = rebatis2.execute(mapper.selectUser("Tom", 18, 1)).single(User.class).get();
         System.out.println(user2);
 
-        List<User> user3 = rebatis.execute(mapper.selectUser("Tom", 18, 1)).convert(User.class).get();
+        List<User> user3 = rebatis2.execute(mapper.selectUser("Tom", 18, 1)).convert(User.class).get();
         System.out.println(user3);
 
     }
